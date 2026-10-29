@@ -49,6 +49,7 @@ export const ConnectionView: React.FC<ConnectionViewProps> = ({ onOpenGuide, onS
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [isTesting, setIsTesting] = useState<boolean>(false);
   const [isConnectingLocal, setIsConnectingLocal] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const isHttpsPage = typeof window !== 'undefined' && window.location.protocol === 'https:';
 
   const formatErrorMessage = (err: any): string => {
