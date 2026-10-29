@@ -1,0 +1,6 @@
+{
+  "name": "OBS PRO REMOTE",
+  "description": "Professional OBS Studio Remote Controller for mobile and iPhone Safari. Switch scenes, control audio, media sources, live streaming, and recording over local network.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
