@@ -141,8 +141,13 @@ class OBSConnectionService {
       cleanHost = clean.replace(/^https?:\/\//, '');
     }
 
+    const isDomain = !/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(cleanHost) && cleanHost !== 'localhost';
+
     // If host already contains port, don't append port again
     if (cleanHost.includes(':')) {
+      url = `${protocol}://${cleanHost}`;
+    } else if (protocol === 'wss' && isDomain) {
+      // Tunnel domain (e.g. ngrok / cloudflare) uses default HTTPS/WSS port 443
       url = `${protocol}://${cleanHost}`;
     } else {
       url = `${protocol}://${cleanHost}:${port}`;
