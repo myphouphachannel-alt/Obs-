@@ -80,6 +80,35 @@ interface OBSContextValue {
 
 const OBSContext = createContext<OBSContextValue | null>(null);
 
+const safeStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        return window.localStorage.getItem(key);
+      }
+    } catch {
+      // Safari private mode or restricted
+    }
+    return null;
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(key, value);
+      }
+    } catch {
+      // Safari private mode or restricted
+    }
+  },
+  removeItem: (key: string): void => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(key);
+      }
+    } catch {}
+  },
+};
+
 export const OBSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
   const [statusMessage, setStatusMessage] = useState<string>('พร้อมเชื่อมต่อกับ OBS Studio');
@@ -88,14 +117,14 @@ export const OBSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   
   // Default IP and Port saved in localStorage (never password)
   const [serverIp, setServerIp] = useState<string>(() => {
-    return localStorage.getItem('obs_remote_ip') || '';
+    return safeStorage.getItem('obs_remote_ip') || '192.168.1.43';
   });
   const [serverPort, setServerPort] = useState<number>(() => {
-    const p = localStorage.getItem('obs_remote_port');
+    const p = safeStorage.getItem('obs_remote_port');
     return p ? parseInt(p, 10) : 4455;
   });
   const [rememberSettings, setRememberSettings] = useState<boolean>(() => {
-    return localStorage.getItem('obs_remote_remember') !== 'false';
+    return safeStorage.getItem('obs_remote_remember') !== 'false';
   });
 
   const [scenes, setScenes] = useState<OBSScene[]>([]);
@@ -126,7 +155,7 @@ export const OBSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [settings, setSettings] = useState<RemoteSettings>(() => {
-    const saved = localStorage.getItem('obs_remote_settings');
+    const saved = safeStorage.getItem('obs_remote_settings');
     if (saved) {
       try {
         return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
@@ -155,7 +184,7 @@ export const OBSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateSettings = useCallback((newSettings: Partial<RemoteSettings>) => {
     setSettings((prev) => {
       const updated = { ...prev, ...newSettings };
-      localStorage.setItem('obs_remote_settings', JSON.stringify(updated));
+      safeStorage.setItem('obs_remote_settings', JSON.stringify(updated));
       return updated;
     });
   }, []);
@@ -165,7 +194,7 @@ export const OBSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const pads = [...prev.cameraPads];
       pads[index] = pad;
       const updated = { ...prev, cameraPads: pads };
-      localStorage.setItem('obs_remote_settings', JSON.stringify(updated));
+      safeStorage.setItem('obs_remote_settings', JSON.stringify(updated));
       return updated;
     });
   }, []);
@@ -369,13 +398,13 @@ export const OBSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setRememberSettings(remember);
 
       if (remember) {
-        localStorage.setItem('obs_remote_ip', ip);
-        localStorage.setItem('obs_remote_port', port.toString());
-        localStorage.setItem('obs_remote_remember', 'true');
+        safeStorage.setItem('obs_remote_ip', ip);
+        safeStorage.setItem('obs_remote_port', port.toString());
+        safeStorage.setItem('obs_remote_remember', 'true');
       } else {
-        localStorage.removeItem('obs_remote_ip');
-        localStorage.removeItem('obs_remote_port');
-        localStorage.setItem('obs_remote_remember', 'false');
+        safeStorage.removeItem('obs_remote_ip');
+        safeStorage.removeItem('obs_remote_port');
+        safeStorage.setItem('obs_remote_remember', 'false');
       }
 
       triggerHaptic('medium');

@@ -209,6 +209,13 @@ export const ConnectionView: React.FC<ConnectionViewProps> = ({ onOpenGuide, onS
               <span className="text-[10px] text-slate-400 self-center mr-1">ตั้งค่าด่วน:</span>
               <button
                 type="button"
+                onClick={() => quickSetIp('192.168.1.43')}
+                className="px-2 py-0.5 rounded-md bg-red-950/80 border border-red-500/60 hover:bg-red-900 text-[10px] font-mono text-red-200 font-bold"
+              >
+                192.168.1.43
+              </button>
+              <button
+                type="button"
                 onClick={() => quickSetIp('192.168.1.')}
                 className="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-slate-300"
               >
