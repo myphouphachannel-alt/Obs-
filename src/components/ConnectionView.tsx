@@ -49,7 +49,21 @@ export const ConnectionView: React.FC<ConnectionViewProps> = ({ onOpenGuide, onS
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [isTesting, setIsTesting] = useState<boolean>(false);
   const [isConnectingLocal, setIsConnectingLocal] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const isHttpsPage = typeof window !== 'undefined' && window.location.protocol === 'https:';
+
+  const formatErrorMessage = (err: any): string => {
+    const raw = String(err?.message || err || '');
+    if (raw.toLowerCase().includes('auth') || raw.includes('4009')) {
+      return 'รหัสผ่านไม่ถูกต้อง หรือใน OBS มีการตั้งรหัสผ่านไว้แต่ยังไม่ได้กรอกในหน้านี้ (ตรวจสอบใน OBS > Tools > WebSocket Server Settings)';
+    }
+    if (raw.toLowerCase().includes('security') || raw.toLowerCase().includes('insecure')) {
+      return 'เบราว์เซอร์บล็อกการเชื่อมต่อ (Mixed Content): คุณกำลังเปิดผ่าน HTTPS แต่ OBS WebSocket เป็น ws:// แบบไม่เข้ารหัส กรุณาเปิดผ่าน HTTP (http://192.168.1.43:3000) หรือใช้ WSS';
+    }
+    if (isHttpsPage && (raw.includes('ConnectionClosed') || raw.includes('failed') || raw.includes('1006') || raw.includes('Error'))) {
+      return `เชื่อมต่อไม่สำเร็จ: เนื่องจากคุณเปิดเว็บผ่าน HTTPS (${window.location.hostname}) ทำให้ Safari บล็อกการติดต่อกับ ws://${ip}:${port} ภายในบ้าน (Mixed Content) กรุณารันเว็บในคอมแล้วเข้าผ่าน http://192.168.1.43:3000 หรือเช็ครหัสผ่าน OBS`;
+    }
+    return raw || 'เชื่อมต่อกับ OBS ไม่สำเร็จ ตรวจสอบ IP และการตั้งค่า WebSocket';
+  };
 
   const handleConnect = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -67,7 +81,7 @@ export const ConnectionView: React.FC<ConnectionViewProps> = ({ onOpenGuide, onS
       await connect(ip.trim(), port, password, remember);
       if (onSuccess) onSuccess();
     } catch (err: any) {
-      setErrorMessage(err?.message || 'เชื่อมต่อกับ OBS ไม่สำเร็จ ตรวจสอบ IP และการตั้งค่า WebSocket');
+      setErrorMessage(formatErrorMessage(err));
     } finally {
       setIsConnectingLocal(false);
     }
@@ -185,6 +199,22 @@ export const ConnectionView: React.FC<ConnectionViewProps> = ({ onOpenGuide, onS
       ) : (
         /* Form Connection */
         <form onSubmit={handleConnect} className="bg-[#141824] rounded-2xl border border-slate-800 p-5 shadow-xl space-y-4">
+          {/* HTTPS Mixed Content Warning Banner */}
+          {isHttpsPage && (
+            <div className="p-3.5 rounded-xl bg-amber-950/50 border border-amber-500/60 text-xs text-amber-200 space-y-1.5">
+              <div className="flex items-center gap-1.5 font-bold text-amber-300">
+                <Shield className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>กำลังเปิดผ่าน HTTPS ({typeof window !== 'undefined' ? window.location.hostname : 'Cloud'}):</span>
+              </div>
+              <p className="leading-relaxed text-[11px] text-amber-200/90">
+                Safari บน iPhone จะบล็อกการเชื่อมต่อกับ <code className="bg-black/40 px-1 rounded font-mono text-white">ws://192.168.1.43:4455</code> ตามมาตรฐานความปลอดภัย Mixed Content
+              </p>
+              <div className="pt-1 text-[11px] text-amber-100 bg-black/30 p-2 rounded-lg font-medium">
+                💡 <strong>วิธีแก้:</strong> รันคำสั่ง <code className="text-emerald-300 font-mono">npm run dev</code> ในคอม แล้วเปิด Safari เข้าผ่าน <code className="text-white font-mono underline">http://192.168.1.43:3000</code> (เป็น HTTP จะไม่ถูกบล็อก)
+              </div>
+            </div>
+          )}
+
           {/* IP Address */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">

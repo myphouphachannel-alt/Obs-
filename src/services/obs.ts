@@ -126,9 +126,27 @@ class OBSConnectionService {
     this.isConnecting = true;
     let url: string;
     
-    // Normalize IP/Host: allow ws:// or raw host/IP
-    const cleanHost = ip.trim().replace(/^https?:\/\//, '').replace(/^wss?:\/\//, '');
-    url = `ws://${cleanHost}:${port}`;
+    // Normalize IP/Host: allow wss://, ws:// or raw host/IP
+    const clean = ip.trim();
+    let protocol = 'ws';
+    let cleanHost = clean;
+
+    if (clean.startsWith('wss://')) {
+      protocol = 'wss';
+      cleanHost = clean.replace(/^wss:\/\//, '');
+    } else if (clean.startsWith('ws://')) {
+      protocol = 'ws';
+      cleanHost = clean.replace(/^ws:\/\//, '');
+    } else {
+      cleanHost = clean.replace(/^https?:\/\//, '');
+    }
+
+    // If host already contains port, don't append port again
+    if (cleanHost.includes(':')) {
+      url = `${protocol}://${cleanHost}`;
+    } else {
+      url = `${protocol}://${cleanHost}:${port}`;
+    }
 
     try {
       // Subscribe to General, Config, Scenes, Inputs, Transitions, Outputs, SceneItems, MediaInputs
