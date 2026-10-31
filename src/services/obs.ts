@@ -155,7 +155,7 @@ class OBSConnectionService {
 
     try {
       // Subscribe to General, Config, Scenes, Inputs, Transitions, Outputs, SceneItems, MediaInputs
-      const response = await this.obs!.connect(url, password || undefined, {
+      const connectPromise = this.obs!.connect(url, password || undefined, {
         eventSubscriptions:
           EventSubscription.General |
           EventSubscription.Config |
@@ -167,6 +167,14 @@ class OBSConnectionService {
           EventSubscription.MediaInputs,
       });
 
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error(`หมดเวลาเชื่อมต่อ (10s): คอมพิวเตอร์ไม่ตอบรับที่พอร์ต ${port} (ตรวจดูว่าเปิด OBS และปลดล็อค Windows Firewall พอร์ต 4455 หรือยัง)`));
+        }, 10000);
+      });
+
+      const response = await Promise.race([connectPromise, timeoutPromise]) as any;
+
       this.isConnected = true;
       this.isConnecting = false;
       this.emit('ConnectionSuccess', response);
@@ -177,6 +185,9 @@ class OBSConnectionService {
         obsWebSocketVersion: versionData.obsWebSocketVersion,
       };
     } catch (err: any) {
+      try {
+        await this.obs!.disconnect();
+      } catch {}
       this.isConnected = false;
       this.isConnecting = false;
       throw err;
